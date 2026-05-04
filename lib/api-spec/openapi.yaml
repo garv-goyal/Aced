@@ -1,0 +1,932 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Career Mirror API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: interviews
+    description: Mock interview session operations
+  - name: openai
+    description: OpenAI AI chat and audio operations
+paths:
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current auth state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCurrentAuthUserResponse"
+
+  /login:
+    get:
+      operationId: login
+      tags: [auth]
+      summary: Initiate OIDC login
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to OIDC provider
+
+  /logout:
+    get:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "302":
+          description: Redirect to OIDC end session
+
+  /callback:
+    get:
+      operationId: authCallback
+      tags: [auth]
+      summary: OIDC callback
+      responses:
+        "302":
+          description: Redirect after successful auth
+
+  /mobile-auth/token-exchange:
+    post:
+      operationId: exchangeMobileAuthorizationCode
+      tags: [auth]
+      summary: Exchange mobile authorization code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeBody"
+      responses:
+        "200":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeResponse"
+
+  /mobile-auth/logout:
+    post:
+      operationId: logoutMobileSession
+      tags: [auth]
+      summary: Logout mobile session
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutMobileSessionResponse"
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /interviews:
+    get:
+      operationId: listInterviews
+      tags: [interviews]
+      summary: List all interview sessions
+      responses:
+        "200":
+          description: List of interview sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InterviewSession"
+    post:
+      operationId: createInterview
+      tags: [interviews]
+      summary: Create a new interview session and generate questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInterviewBody"
+      responses:
+        "201":
+          description: Created interview session with generated questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionWithQuestions"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}:
+    get:
+      operationId: getInterview
+      tags: [interviews]
+      summary: Get an interview session with questions and answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview session with questions and answers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionFull"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteInterview
+      tags: [interviews]
+      summary: Delete an interview session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}/retry:
+    post:
+      operationId: retryInterview
+      tags: [interviews]
+      summary: Create a new session with the same questions as an existing session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: New interview session with the same questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionWithQuestions"
+        "404":
+          description: Original session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}/questions/{questionId}:
+    patch:
+      operationId: updateQuestion
+      tags: [interviews]
+      summary: Override a question with custom text
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuestionBody"
+      responses:
+        "200":
+          description: Question updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateQuestionResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}/answers:
+    post:
+      operationId: submitAnswer
+      tags: [interviews]
+      summary: Submit an answer for a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerBody"
+      responses:
+        "200":
+          description: Answer saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewAnswer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}/score:
+    post:
+      operationId: scoreInterview
+      tags: [interviews]
+      summary: Complete interview and generate AI feedback scorecard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview scorecard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewScorecard"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/{id}/scorecard:
+    get:
+      operationId: getScorecard
+      tags: [interviews]
+      summary: Get the scorecard for a completed interview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview scorecard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewScorecard"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /interviews/speak:
+    post:
+      operationId: speakText
+      tags: [interviews]
+      summary: Convert text to speech audio (SSE stream)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeakTextBody"
+      responses:
+        "200":
+          description: SSE audio stream
+          content:
+            text/event-stream: {}
+
+  /openai/conversations:
+    get:
+      operationId: listOpenaiConversations
+      tags: [openai]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiConversation"
+    post:
+      operationId: createOpenaiConversation
+      tags: [openai]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOpenaiConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversation"
+
+  /openai/conversations/{id}:
+    get:
+      operationId: getOpenaiConversation
+      tags: [openai]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+    delete:
+      operationId: deleteOpenaiConversation
+      tags: [openai]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+
+  /openai/conversations/{id}/messages:
+    get:
+      operationId: listOpenaiMessages
+      tags: [openai]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiMessage"
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send a text message and receive a streaming text response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOpenaiMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant text chunks
+          content:
+            text/event-stream: {}
+
+components:
+  schemas:
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        profileImageUrl:
+          type: string
+      required:
+        - id
+
+    GetCurrentAuthUserResponse:
+      type: object
+      properties:
+        isAuthenticated:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required:
+        - isAuthenticated
+
+    ExchangeMobileAuthorizationCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+        codeVerifier:
+          type: string
+        state:
+          type: string
+        nonce:
+          type: string
+        redirectUri:
+          type: string
+      required:
+        - code
+        - codeVerifier
+        - state
+        - nonce
+        - redirectUri
+
+    ExchangeMobileAuthorizationCodeResponse:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+
+    LogoutMobileSessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    InterviewSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobTitle:
+          type: string
+        status:
+          type: string
+          enum: [setup, active, complete]
+        questionCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - jobTitle
+        - status
+        - questionCount
+        - createdAt
+
+    InterviewQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        orderIndex:
+          type: integer
+        questionText:
+          type: string
+        category:
+          type: string
+          enum: [technical, behavioral]
+        gapArea:
+          type: string
+      required:
+        - id
+        - sessionId
+        - orderIndex
+        - questionText
+        - category
+        - gapArea
+
+    InterviewAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+        questionId:
+          type: integer
+        transcript:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - questionId
+        - transcript
+        - createdAt
+
+    InterviewSessionWithQuestions:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobTitle:
+          type: string
+        status:
+          type: string
+          enum: [setup, active, complete]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestion"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - jobTitle
+        - status
+        - questions
+        - createdAt
+
+    InterviewQuestionWithAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        orderIndex:
+          type: integer
+        questionText:
+          type: string
+        category:
+          type: string
+          enum: [technical, behavioral]
+        gapArea:
+          type: string
+        answer:
+          $ref: "#/components/schemas/InterviewAnswer"
+      required:
+        - id
+        - sessionId
+        - orderIndex
+        - questionText
+        - category
+        - gapArea
+
+    InterviewSessionFull:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobTitle:
+          type: string
+        resumeText:
+          type: string
+        jobDescription:
+          type: string
+        status:
+          type: string
+          enum: [setup, active, complete]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestionWithAnswer"
+        scorecard:
+          $ref: "#/components/schemas/InterviewScorecard"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - jobTitle
+        - resumeText
+        - jobDescription
+        - status
+        - questions
+        - createdAt
+
+    QuestionFeedback:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        questionText:
+          type: string
+        transcript:
+          type: string
+        clarityScore:
+          type: integer
+        starScore:
+          type: integer
+        sentimentScore:
+          type: integer
+        feedback:
+          type: string
+        hasSituation:
+          type: boolean
+        hasTask:
+          type: boolean
+        hasAction:
+          type: boolean
+        hasResult:
+          type: boolean
+      required:
+        - questionId
+        - questionText
+        - transcript
+        - clarityScore
+        - starScore
+        - sentimentScore
+        - feedback
+        - hasSituation
+        - hasTask
+        - hasAction
+        - hasResult
+
+    InterviewScorecard:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        overallScore:
+          type: integer
+        clarityScore:
+          type: integer
+        starScore:
+          type: integer
+        sentimentScore:
+          type: integer
+        confidenceLevel:
+          type: string
+          enum: [low, medium, high]
+        overallFeedback:
+          type: string
+        strengthPoints:
+          type: array
+          items:
+            type: string
+        improvementPoints:
+          type: array
+          items:
+            type: string
+        questionFeedbacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionFeedback"
+        jobTitle:
+          type: string
+        jobDescription:
+          type: string
+        interviewType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - overallScore
+        - clarityScore
+        - starScore
+        - sentimentScore
+        - confidenceLevel
+        - overallFeedback
+        - strengthPoints
+        - improvementPoints
+        - questionFeedbacks
+        - jobTitle
+        - jobDescription
+        - interviewType
+        - createdAt
+
+    UpdateQuestionBody:
+      type: object
+      properties:
+        questionText:
+          type: string
+      required:
+        - questionText
+
+    UpdateQuestionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        questionText:
+          type: string
+        isCustom:
+          type: boolean
+      required:
+        - id
+        - questionText
+        - isCustom
+
+    CreateInterviewBody:
+      type: object
+      properties:
+        resumeText:
+          type: string
+        jobDescription:
+          type: string
+        jobTitle:
+          type: string
+        interviewType:
+          type: string
+          enum: [mixed, behavioral, technical, case_study, culture_fit]
+          default: mixed
+      required:
+        - resumeText
+        - jobDescription
+        - jobTitle
+
+    SubmitAnswerBody:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        transcript:
+          type: string
+      required:
+        - questionId
+        - transcript
+
+    SpeakTextBody:
+      type: object
+      properties:
+        text:
+          type: string
+        voice:
+          type: string
+      required:
+        - text
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    OpenaiConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+
+    OpenaiMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+
+    CreateOpenaiConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+
+    SendOpenaiMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    OpenaiConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/OpenaiMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+
+    OpenaiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
