@@ -226,15 +226,42 @@ export default function InterviewRoom() {
 
   if (allAnswered) {
     return (
-      <div className="min-h-[100dvh] w-full max-w-3xl mx-auto flex flex-col items-center justify-center p-8 space-y-6">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <BrainCircuit className="w-8 h-8 text-primary" />
+      <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-8">
+        <div className="max-w-2xl w-full space-y-8">
+          {/* Animated checkmark circle */}
+          <div className="flex justify-center">
+            <div className="relative w-32 h-32">
+              {/* Outer circle glow */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 opacity-20 blur-2xl animate-pulse" />
+              {/* Main circle */}
+              <div className="absolute inset-0 rounded-full border-4 border-blue-600 flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
+                <Check className="w-16 h-16 text-blue-600 animate-bounce" style={{ animationDelay: '0s' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="text-center space-y-3">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">You're all set!</h2>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">
+              All questions answered. Let's analyze your performance with AI-powered insights.
+            </p>
+          </div>
+
+          {/* CTA Button */}
+          <div className="flex justify-center pt-4">
+            <Button onClick={handleFinish} disabled={scoreInterview.isPending} size="lg" className="font-semibold gap-2 px-8 py-6 text-base bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all">
+              {scoreInterview.isPending ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> Generating Results...</>
+              ) : (
+                <>
+                  <span>View My Scorecard</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        <h2 className="text-2xl font-semibold text-center">All questions answered!</h2>
-        <p className="text-muted-foreground text-center">Generate your AI-powered scorecard to see your performance breakdown.</p>
-        <Button onClick={handleFinish} disabled={scoreInterview.isPending} size="lg" className="font-semibold gap-2">
-          {scoreInterview.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating Scorecard...</> : <>View My Results <ArrowRight className="w-4 h-4" /></>}
-        </Button>
       </div>
     );
   }

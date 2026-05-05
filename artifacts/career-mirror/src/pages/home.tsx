@@ -274,7 +274,7 @@ export default function Home() {
                   <span className="text-xs font-medium text-slate-700 max-w-[72px] truncate hidden sm:block">{displayName}</span>
                 </div>
                 <button
-                  onClick={() => signOut(() => setLocation("/"))}
+                  onClick={() => signOut({ redirectUrl: "/" })}
                   className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                   title="Log out"
                 >
