@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://api-aced-api-server-prod.railway.app/api/:path*"
+    }
+  ]
+}
