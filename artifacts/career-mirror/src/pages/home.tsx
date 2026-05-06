@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, ArrowRight, ArrowLeft, Upload,
   FileText, BrainCircuit, ChevronRight, X, History, Play, Sparkles, LogIn, LogOut, Timer,
-  Mic, BarChart3
+  Mic, BarChart3, Layers, Users, Code2, TrendingUp, Heart,
+  type LucideIcon
 } from "lucide-react";
 
 function useTypewriter(text: string, speed = 55, startDelay = 400) {
@@ -39,12 +40,12 @@ function useTypewriter(text: string, speed = 55, startDelay = 400) {
   return { displayed, done: displayed.length >= text.length };
 }
 
-const INTERVIEW_TYPES: { value: InterviewType; label: string; emoji: string; desc: string }[] = [
-  { value: "mixed", label: "Mixed", emoji: "🎯", desc: "Best-of-all — AI picks the right blend" },
-  { value: "behavioral", label: "Behavioral", emoji: "🧠", desc: "STAR-method, past experiences & leadership" },
-  { value: "technical", label: "Technical", emoji: "⚙️", desc: "Skills, system design & problem-solving" },
-  { value: "case_study", label: "Case Study", emoji: "📊", desc: "Business scenarios & strategic thinking" },
-  { value: "culture_fit", label: "Culture Fit", emoji: "🤝", desc: "Values, team dynamics & motivations" },
+const INTERVIEW_TYPES: { value: InterviewType; label: string; icon: LucideIcon; color: string; desc: string }[] = [
+  { value: "mixed",        label: "Mixed",        icon: Layers,     color: "text-blue-600 bg-blue-50",    desc: "Best-of-all — AI picks the right blend" },
+  { value: "behavioral",  label: "Behavioral",   icon: Users,      color: "text-violet-600 bg-violet-50", desc: "STAR-method, past experiences & leadership" },
+  { value: "technical",   label: "Technical",    icon: Code2,      color: "text-amber-600 bg-amber-50",   desc: "Skills, system design & problem-solving" },
+  { value: "case_study",  label: "Case Study",   icon: TrendingUp, color: "text-emerald-600 bg-emerald-50", desc: "Business scenarios & strategic thinking" },
+  { value: "culture_fit", label: "Culture Fit",  icon: Heart,      color: "text-rose-600 bg-rose-50",     desc: "Values, team dynamics & motivations" },
 ];
 
 const STEPS = [
@@ -434,7 +435,9 @@ export default function Home() {
                           : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80"
                       }`}
                     >
-                      <span className="text-xl shrink-0">{type.emoji}</span>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${type.color}`}>
+                        <type.icon className="w-4 h-4" />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-semibold ${interviewType === type.value ? "text-blue-700" : "text-slate-800"}`}>
@@ -696,7 +699,7 @@ export default function Home() {
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {typeInfo && (
                         <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-                          <span>{typeInfo.emoji}</span>
+                          <typeInfo.icon className="w-3 h-3" />
                           <span>{typeInfo.label}</span>
                         </span>
                       )}
