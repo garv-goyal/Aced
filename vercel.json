@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://api-aced-api-server-prod.railway.app/api/:path*"
+      "destination": "workspaceapi-server-production-0c25.up.railway.app"
     }
   ]
 }
