@@ -4,7 +4,5 @@
       "source": "/api/:path*",
       "destination": "https://workspaceapi-server-production-0c25.up.railway.app/api/:path*"
     }
-  ],
-  "buildCommand": "cd artifacts/career-mirror && pnpm run build",
-  "outputDirectory": "artifacts/career-mirror/dist"
+  ]
 }
