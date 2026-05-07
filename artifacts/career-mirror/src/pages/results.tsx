@@ -4,17 +4,18 @@ import { useGetScorecard, useRetryInterview } from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
-  Loader2, ArrowLeft, CheckCircle2, XCircle, FileText,
-  ChevronDown, ChevronUp, RotateCcw,
+  Loader2, ArrowLeft, ArrowRight, CheckCircle2, XCircle, FileText,
+  ChevronDown, ChevronUp, RotateCcw, Lightbulb,
+  Layers, Users, Code2, TrendingUp, Heart, type LucideIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 
-const INTERVIEW_TYPE_DISPLAY: Record<string, { label: string; emoji: string }> = {
-  mixed:       { label: "Mixed",       emoji: "🎯" },
-  behavioral:  { label: "Behavioral",  emoji: "🧠" },
-  technical:   { label: "Technical",   emoji: "⚙️" },
-  case_study:  { label: "Case Study",  emoji: "📊" },
-  culture_fit: { label: "Culture Fit", emoji: "🤝" },
+const INTERVIEW_TYPE_DISPLAY: Record<string, { label: string; icon: LucideIcon; color: string }> = {
+  mixed:       { label: "Mixed",        icon: Layers,     color: "text-blue-400"   },
+  behavioral:  { label: "Behavioral",   icon: Users,      color: "text-violet-400" },
+  technical:   { label: "Technical",    icon: Code2,      color: "text-amber-400"  },
+  case_study:  { label: "Case Study",   icon: TrendingUp, color: "text-emerald-400"},
+  culture_fit: { label: "Culture Fit",  icon: Heart,      color: "text-rose-400"   },
 };
 
 function getGrade(score: number) {
@@ -36,18 +37,6 @@ function getScoreBarColor(score: number) {
   return "bg-red-400";
 }
 
-const GRID_BG: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(rgba(37,99,235,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.045) 1px, transparent 1px)",
-  backgroundSize: "44px 44px",
-  backgroundColor: "#ffffff",
-};
-
-const DARK_GRID_BG: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-  backgroundSize: "44px 44px",
-};
 
 export default function Results() {
   const { id } = useParams();
@@ -65,7 +54,7 @@ export default function Results() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={GRID_BG}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
           <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-100/60 blur-[100px]" />
           <div className="absolute top-1/2 -right-60 w-[500px] h-[500px] rounded-full bg-indigo-100/50 blur-[120px]" />
@@ -78,7 +67,7 @@ export default function Results() {
 
   if (error || !scorecard) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center" style={GRID_BG}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-slate-500 font-medium">Failed to load scorecard.</p>
         <Button variant="outline" onClick={() => setLocation("/")}>Back to Home</Button>
       </div>
@@ -86,7 +75,7 @@ export default function Results() {
   }
 
   const grade     = getGrade(scorecard.overallScore);
-  const typeInfo  = INTERVIEW_TYPE_DISPLAY[scorecard.interviewType] ?? { label: scorecard.interviewType, emoji: "🎯" };
+  const typeInfo  = INTERVIEW_TYPE_DISPLAY[scorecard.interviewType] ?? { label: scorecard.interviewType, icon: Layers, color: "text-blue-400" };
   const sessionDate = new Date(scorecard.createdAt);
 
   const confidenceBadge = {
@@ -96,17 +85,21 @@ export default function Results() {
   }[scorecard.confidenceLevel] ?? "bg-slate-400/10 text-slate-400 border-slate-400/20";
 
   return (
-    <div className="min-h-screen font-sans" style={GRID_BG}>
+    <div className="min-h-screen font-sans">
 
-      {/* Decorative blobs — match home page exactly */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-100/60 blur-[100px]" />
-        <div className="absolute top-1/2 -right-60 w-[500px] h-[500px] rounded-full bg-indigo-100/50 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-sky-100/40 blur-[80px]" />
-      </div>
+      {/* Dot-grid background — matches home page */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          backgroundColor: "#fff",
+          backgroundImage: "radial-gradient(circle, #e2e8f0 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-white/60 via-transparent to-white/80" />
 
       {/* ── Dark hero ───────────────────────────────────────────────── */}
-      <div className="relative" style={{ backgroundColor: "rgba(15,23,42,0.97)", ...DARK_GRID_BG }}>
+      <div className="relative" style={{ backgroundColor: "rgba(15,23,42,0.97)" }}>
         {/* Blue glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
@@ -158,35 +151,61 @@ export default function Results() {
               <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
                 {scorecard.jobTitle}
               </h1>
-              <p className="text-sm text-slate-500">
-                {typeInfo.emoji} {typeInfo.label} · {format(sessionDate, "MMM d, yyyy")} · {format(sessionDate, "h:mm a")}
+              <p className="flex items-center gap-1.5 text-sm text-slate-500">
+                <typeInfo.icon className={`w-3.5 h-3.5 ${typeInfo.color}`} />
+                {typeInfo.label} · {format(sessionDate, "MMM d, yyyy")} · {format(sessionDate, "h:mm a")}
               </p>
             </div>
 
-            {/* Right: score number + grade */}
-            <div className="shrink-0 text-center md:text-right">
-              <div className="text-6xl font-black text-white leading-none tabular-nums">
-                {Math.round(scorecard.overallScore)}
+            {/* Right: circular score ring */}
+            <div className="shrink-0 flex flex-col items-center gap-1.5">
+              <div className="relative w-[108px] h-[108px]">
+                <svg width="108" height="108" viewBox="0 0 108 108" className="absolute inset-0">
+                  <defs>
+                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#8b5cf6" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="54" cy="54" r="44" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="9" />
+                  <circle
+                    cx="54" cy="54" r="44"
+                    fill="none"
+                    stroke="url(#ringGrad)"
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 44}`}
+                    strokeDashoffset={`${2 * Math.PI * 44 * (1 - Math.min(scorecard.overallScore, 100) / 100)}`}
+                    transform="rotate(-90 54 54)"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-black text-white leading-none tabular-nums">{Math.round(scorecard.overallScore)}</span>
+                  <span className="text-[10px] text-slate-500 mt-0.5">/ 100</span>
+                </div>
               </div>
-              <div className="text-xs text-slate-500 mt-1">out of 100</div>
-              <div className={`mt-2 text-lg font-black ${grade.color}`}>
-                {grade.letter} · {grade.label}
-              </div>
+              <div className={`text-sm font-black ${grade.color}`}>{grade.letter} · {grade.label}</div>
             </div>
           </div>
 
-          {/* Dimension score pills */}
-          <div className="flex items-center gap-8 md:gap-10 mt-8 pt-8 border-t border-white/[0.06]">
+          {/* Dimension scores with mini bars */}
+          <div className="flex items-start gap-8 md:gap-12 mt-8 pt-8 border-t border-white/[0.06]">
             {[
               { label: "Clarity",   value: scorecard.clarityScore   },
               { label: "STAR",      value: scorecard.starScore      },
               { label: "Sentiment", value: scorecard.sentimentScore },
             ].map(({ label, value }, i) => (
               <React.Fragment key={label}>
-                {i > 0 && <div className="w-px h-8 bg-white/[0.06]" />}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-2xl font-black text-white tabular-nums">{Math.round(value)}</span>
+                {i > 0 && <div className="w-px self-stretch bg-white/[0.06]" />}
+                <div className="flex flex-col gap-1.5 min-w-[72px]">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+                  <span className="text-2xl font-black text-white tabular-nums leading-none">{Math.round(value)}</span>
+                  <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mt-0.5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-400"
+                      style={{ width: `${Math.round(value)}%` }}
+                    />
+                  </div>
                 </div>
               </React.Fragment>
             ))}
@@ -198,40 +217,36 @@ export default function Results() {
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-10 space-y-10 relative">
 
         {/* Coaching Summary */}
-        <section className="space-y-3">
+        <section className="rounded-2xl border border-slate-100 bg-white shadow-sm p-6 space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">AI Coaching Summary</p>
           <p className="text-base leading-relaxed text-slate-700">{scorecard.overallFeedback}</p>
         </section>
 
-        <hr className="border-slate-200/80" />
-
         {/* Strengths + Improvements */}
-        <section className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-4">
+        <section className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-6 space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Key Strengths</p>
             <ul className="space-y-3">
               {scorecard.strengthPoints.map((point, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">✓</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <span className="text-sm text-slate-700 leading-relaxed">{point}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="space-y-4">
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-6 space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest text-amber-600">Areas to Improve</p>
             <ul className="space-y-3">
               {scorecard.improvementPoints.map((point, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">!</span>
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <span className="text-sm text-slate-700 leading-relaxed">{point}</span>
                 </li>
               ))}
             </ul>
           </div>
         </section>
-
-        <hr className="border-slate-200/80" />
 
         {/* Question breakdown */}
         <section className="space-y-3">
@@ -362,7 +377,7 @@ export default function Results() {
         </section>
 
         {/* Bottom CTA */}
-        <div className="flex justify-center pt-4 pb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 pb-8">
           <Button
             size="lg"
             onClick={handleRetry}
@@ -370,8 +385,16 @@ export default function Results() {
             className="gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/60 px-8"
           >
             {retryInterview.isPending
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up session…</>
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</>
               : <><RotateCcw className="w-4 h-4" /> Practice Again</>}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => { window.scrollTo(0, 0); setLocation("/"); }}
+            className="gap-2 rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 px-8"
+          >
+            <ArrowRight className="w-4 h-4" /> New Interview
           </Button>
         </div>
 

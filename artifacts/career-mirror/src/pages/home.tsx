@@ -319,11 +319,11 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-6 py-8 md:py-12">
+      <main className="flex-1 px-6 pt-6 pb-10">
 
         {step === 1 ? (
           /* ── STEP 1: split layout ── */
-          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-10 lg:gap-16 items-start pt-2 lg:pt-6">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-10 lg:gap-16 items-start">
 
             {/* LEFT: Hero */}
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-3 duration-500">
@@ -520,17 +520,18 @@ export default function Home() {
           <div className="flex flex-col items-center gap-10">
             <div
               key={step}
-              className={`w-full max-w-xl space-y-7 ${
+              className={`w-full max-w-xl ${
                 animDir === "forward"
                   ? "animate-in fade-in slide-in-from-right-4 duration-400"
                   : "animate-in fade-in slide-in-from-left-4 duration-400"
               }`}
             >
-              <div className="space-y-3">
+              <div className="rounded-2xl border border-slate-100 bg-white/90 shadow-xl shadow-slate-200/40 backdrop-blur-sm p-7 space-y-6">
+              <div className="space-y-2">
                 <p className="text-xs font-bold tracking-[0.12em] text-blue-600 uppercase">
                   {STEPS[step - 1].stepLabel}
                 </p>
-                <h1 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
                   {STEPS[step - 1].heading}
                 </h1>
               </div>
@@ -608,19 +609,28 @@ export default function Home() {
               )}
 
               {/* CTA */}
-              <div className="space-y-3 pt-2">
-                <Button
-                  onClick={handleStart}
-                  disabled={createInterview.isPending}
-                  className="w-full h-12 text-base font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-md gap-2"
-                  data-testid="button-start-interview"
-                >
-                  {createInterview.isPending ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Creating session...</>
-                  ) : (
-                    <><Play className="w-4 h-4 fill-current" /> Start Interview</>
-                  )}
-                </Button>
+              <div className="space-y-3 pt-1">
+                {step === 2 ? (
+                  <Button
+                    onClick={goNext}
+                    className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/60 gap-2"
+                  >
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleStart}
+                    disabled={createInterview.isPending}
+                    className="w-full h-12 text-base font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-md gap-2"
+                    data-testid="button-start-interview"
+                  >
+                    {createInterview.isPending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Creating session...</>
+                    ) : (
+                      <><Play className="w-4 h-4 fill-current" /> Start Interview</>
+                    )}
+                  </Button>
+                )}
                 <button
                   onClick={goBack}
                   className="w-full text-center text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors flex items-center justify-center gap-1.5 py-2"
@@ -628,6 +638,7 @@ export default function Home() {
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
               </div>
+              </div>{/* end card */}
             </div>
           </div>
         )}
