@@ -147,7 +147,7 @@ export default function InterviewRoom() {
   });
 
   const { isListening, transcript, interimTranscript, startListening, stopListening, resetTranscript, hasSupport } = useSpeechRecognition();
-  const { speak, stop: stopTTS, isSpeaking } = useTextToSpeech();
+  const { speak, stop: stopTTS, isSpeaking, preload } = useTextToSpeech();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [finalAnswer, setFinalAnswer] = useState("");
@@ -176,6 +176,11 @@ export default function InterviewRoom() {
       }
     }
   }, [session, questions.length, setLocation]);
+
+  // Pre-fetch TTS audio for the current question so speak() is instant
+  useEffect(() => {
+    if (currentQuestion?.questionText) preload(currentQuestion.questionText);
+  }, [currentQuestion?.id, preload]);
 
   // Focus edit textarea when entering edit mode
   useEffect(() => {

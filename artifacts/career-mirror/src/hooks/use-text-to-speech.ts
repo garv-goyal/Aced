@@ -16,6 +16,7 @@ export function useTextToSpeech() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cancelBrowserRef = useRef<(() => void) | null>(null);
+  const cache = useRef<Map<string, string>>(new Map());
 
   const stop = useCallback(() => {
     if (audioRef.current) {
@@ -30,36 +31,47 @@ export function useTextToSpeech() {
     setIsSpeaking(false);
   }, []);
 
+  const fetchAndCache = useCallback(async (text: string): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/interviews/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: 'alloy' }),
+      });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      cache.current.set(text, url);
+      return url;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Call this when a question becomes visible — fires in background so speak() is instant
+  const preload = useCallback((text: string) => {
+    if (cache.current.has(text)) return;
+    fetchAndCache(text);
+  }, [fetchAndCache]);
+
   const speak = useCallback(async (text: string) => {
     stop();
     setIsSpeaking(true);
 
-    try {
-      const response = await fetch('/api/interviews/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: 'alloy' })
-      });
+    const url = cache.current.get(text) ?? await fetchAndCache(text);
 
-      if (!response.ok) throw new Error('TTS server unavailable');
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+    if (url) {
       const audio = new Audio(url);
       audioRef.current = audio;
-
-      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); };
+      audio.onended = () => setIsSpeaking(false);
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
         cancelBrowserRef.current = speakWithBrowser(text, () => setIsSpeaking(false));
       };
-
       await audio.play();
-    } catch {
-      // Server TTS unavailable — fall back to browser SpeechSynthesis
+    } else {
       cancelBrowserRef.current = speakWithBrowser(text, () => setIsSpeaking(false));
     }
-  }, [stop]);
+  }, [stop, fetchAndCache]);
 
-  return { speak, stop, isSpeaking };
+  return { speak, stop, isSpeaking, preload };
 }
