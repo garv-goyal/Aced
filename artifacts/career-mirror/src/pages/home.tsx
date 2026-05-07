@@ -220,12 +220,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full flex flex-col overflow-hidden">
-      {/* Decorative blobs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-100/60 blur-[100px]" />
-        <div className="absolute top-1/2 -right-60 w-[500px] h-[500px] rounded-full bg-indigo-100/50 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-sky-100/40 blur-[80px]" />
-      </div>
+      {/* Dot-grid background */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          backgroundColor: "#fff",
+          backgroundImage: "radial-gradient(circle, #e2e8f0 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      {/* Fade edges so it doesn't look tiled */}
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-white/60 via-transparent to-white/80" />
 
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl border-b border-slate-100/80 shadow-sm shadow-slate-100/60">
@@ -313,309 +318,320 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main step content */}
-      <main className="flex-1 flex flex-col items-center px-6 py-10 gap-10">
+      {/* Main content */}
+      <main className="flex-1 px-6 py-8 md:py-12">
 
-        {/* Hero — only shown on step 1 */}
-        {step === 1 && (
-          <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-3 duration-500 space-y-8 pt-4">
+        {step === 1 ? (
+          /* ── STEP 1: split layout ── */
+          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-10 lg:gap-16 items-start pt-2 lg:pt-6">
 
-            {/* Badge */}
-            <div className="flex justify-center">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 tracking-widest uppercase">
-                <Sparkles className="w-3 h-3 animate-pulse" /> AI Mock Interviews
-              </span>
-            </div>
+            {/* LEFT: Hero */}
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-3 duration-500">
 
-            {/* Headline with typewriter */}
-            <div className="text-center space-y-4">
-              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-                Stop winging it.
-                <br />
-                <span className="text-blue-600">
-                  {typedText}
-                  {!typingDone && (
-                    <span className="inline-block w-[3px] h-[1em] bg-blue-500 ml-0.5 align-middle animate-pulse rounded-sm" />
-                  )}
+              {/* Badge */}
+              <div className="flex justify-center lg:justify-start">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 tracking-widest uppercase">
+                  <Sparkles className="w-3 h-3 animate-pulse" /> AI Mock Interviews
                 </span>
-              </h2>
-              <p className="text-slate-500 text-base leading-relaxed max-w-sm mx-auto">
-                AI questions built from your real resume and job description — then a detailed coaching scorecard when you're done.
-              </p>
-            </div>
+              </div>
 
-            {/* Feature rows */}
-            <div className="space-y-4">
-              {[
-                {
-                  Icon: BrainCircuit,
-                  color: "text-blue-600 bg-blue-50",
-                  title: "Personalized questions",
-                  desc: "AI reads your job description and resume to generate 5 questions that probe exactly what this role demands.",
-                },
-                {
-                  Icon: Mic,
-                  color: "text-violet-600 bg-violet-50",
-                  title: "Voice-powered practice",
-                  desc: "Speak naturally. Your answer is transcribed live so you can review it before submitting.",
-                },
-                {
-                  Icon: BarChart3,
-                  color: "text-emerald-600 bg-emerald-50",
-                  title: "Three-dimensional scoring",
-                  desc: "Every answer is graded on Clarity, STAR structure, and Confidence — with written coaching notes per question.",
-                },
-              ].map(({ Icon, color, title, desc }) => (
-                <div key={title} className="flex items-start gap-4">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
+              {/* Headline */}
+              <div className="text-center lg:text-left space-y-4">
+                <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+                  Stop winging it.
+                  <br />
+                  <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                    {typedText}
+                    {!typingDone && (
+                      <span className="inline-block w-[3px] h-[1em] bg-blue-500 ml-0.5 align-middle animate-pulse rounded-sm" />
+                    )}
+                  </span>
+                </h2>
+                <p className="text-slate-500 text-base leading-relaxed max-w-sm mx-auto lg:mx-0">
+                  AI questions built from your real resume and job description — then a detailed coaching scorecard when you're done.
+                </p>
+              </div>
+
+              {/* Scorecard preview card */}
+              <div className="rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/40 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{title}</p>
-                    <p className="text-sm text-slate-400 leading-relaxed mt-0.5">{desc}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI Scorecard</p>
+                    <p className="text-sm font-semibold text-slate-800 mt-0.5">Senior PM · Stripe</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full uppercase tracking-wider">Complete</span>
+                </div>
+                <div className="p-5 space-y-3.5">
+                  {[
+                    { label: "Clarity", score: 82, color: "bg-blue-500" },
+                    { label: "STAR Method", score: 74, color: "bg-violet-500" },
+                    { label: "Confidence", score: 91, color: "bg-emerald-500" },
+                  ].map(({ label, score, color }) => (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-slate-600">{label}</span>
+                        <span className="text-sm font-bold text-slate-900 tabular-nums">
+                          {score}<span className="text-slate-300 text-xs font-normal">/100</span>
+                        </span>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full`} style={{ width: `${score}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-5 pb-4">
+                  <div className="rounded-xl bg-slate-50 px-4 py-3">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      <span className="font-semibold text-slate-700">Coach note: </span>
+                      Strong STAR structure on Q2 and Q4. Work on conciseness — aim for under 2 min per answer.
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Minimal stats */}
+              <div className="flex items-center justify-center lg:justify-start gap-6 text-xs text-slate-400 font-medium">
+                <span><span className="text-slate-700 font-bold">5</span> questions</span>
+                <span className="w-px h-3 bg-slate-200" />
+                <span><span className="text-slate-700 font-bold">3</span> scored dimensions</span>
+                <span className="w-px h-3 bg-slate-200" />
+                <span><span className="text-slate-700 font-bold">100%</span> private</span>
+              </div>
             </div>
 
-            {/* Inline stats */}
-            <div className="flex items-center justify-center gap-6 text-xs text-slate-400 font-medium">
-              <span><span className="text-slate-700 font-bold">5</span> questions per session</span>
-              <span className="w-px h-3 bg-slate-200" />
-              <span><span className="text-slate-700 font-bold">3</span> scored dimensions</span>
-              <span className="w-px h-3 bg-slate-200" />
-              <span><span className="text-slate-700 font-bold">100%</span> private</span>
+            {/* RIGHT: Form card */}
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="rounded-2xl border border-slate-100 bg-white/90 shadow-xl shadow-slate-200/40 backdrop-blur-sm p-7 space-y-6">
+
+                <div className="space-y-2">
+                  <p className="text-xs font-bold tracking-[0.12em] text-blue-600 uppercase">{STEPS[0].stepLabel}</p>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">{STEPS[0].heading}</h1>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <Input
+                      ref={inputRef}
+                      className="h-14 text-lg border-slate-200 focus-visible:ring-blue-500 shadow-sm"
+                      placeholder="e.g. Senior Frontend Engineer at Stripe"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && goNext()}
+                      data-testid="input-job-title"
+                    />
+                    <p className="text-sm text-slate-400">{STEPS[0].hint}</p>
+                  </div>
+
+                  {/* Interview type selector */}
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Interview Focus</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {INTERVIEW_TYPES.map((type) => {
+                        const isSelected = interviewType === type.value;
+                        const isMixed = type.value === "mixed";
+                        return (
+                          <button
+                            key={type.value}
+                            onClick={() => setInterviewType(type.value)}
+                            className={`${isMixed ? "col-span-2 flex-row items-center gap-3" : "flex-col items-start gap-2"} flex text-left p-3 rounded-xl border transition-all duration-200 ${
+                              isSelected
+                                ? "border-blue-400 bg-blue-50 shadow-sm shadow-blue-100/60"
+                                : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80"
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${type.color}`}>
+                              <type.icon className="w-4 h-4" />
+                            </div>
+                            <div className={isMixed ? "flex-1 min-w-0" : ""}>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-sm font-semibold leading-tight ${isSelected ? "text-blue-700" : "text-slate-800"}`}>
+                                  {type.label}
+                                </span>
+                                {isMixed && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 bg-slate-100 rounded-full px-1.5 py-0.5 leading-none">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                              {(isMixed || isSelected) && (
+                                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{type.desc}</p>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Time limit */}
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                      <Timer className="w-3.5 h-3.5" /> Time limit per question
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {([0, 30, 60, 90, 120] as const).map((secs) => (
+                        <button
+                          key={secs}
+                          onClick={() => setTimeLimit(secs)}
+                          className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-150 ${
+                            timeLimit === secs
+                              ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/60"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          {secs === 0 ? "No limit" : `${secs}s`}
+                        </button>
+                      ))}
+                    </div>
+                    {timeLimit > 0 && (
+                      <p className="text-xs text-slate-400">Recording auto-stops and submits when time runs out.</p>
+                    )}
+                  </div>
+
+                  {!isLoadingAuth && !isAuthenticated && (
+                    <button
+                      onClick={() => setLocation("/sign-in")}
+                      className="w-full text-left flex items-center gap-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-4 py-3 hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center shrink-0 transition-colors">
+                        <LogIn className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Log in to save your history</p>
+                        <p className="text-xs text-blue-500">Sign in with Google — your sessions will be saved</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+
+                <Button
+                  onClick={goNext}
+                  className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/60 gap-2"
+                >
+                  Continue <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-slate-100" />
-              <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">Get started below</span>
-              <div className="flex-1 h-px bg-slate-100" />
-            </div>
+          </div>
+        ) : (
+          /* ── STEPS 2 & 3: centered layout ── */
+          <div className="flex flex-col items-center gap-10">
+            <div
+              key={step}
+              className={`w-full max-w-xl space-y-7 ${
+                animDir === "forward"
+                  ? "animate-in fade-in slide-in-from-right-4 duration-400"
+                  : "animate-in fade-in slide-in-from-left-4 duration-400"
+              }`}
+            >
+              <div className="space-y-3">
+                <p className="text-xs font-bold tracking-[0.12em] text-blue-600 uppercase">
+                  {STEPS[step - 1].stepLabel}
+                </p>
+                <h1 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                  {STEPS[step - 1].heading}
+                </h1>
+              </div>
 
+              {/* Step 2 — Job description */}
+              {step === 2 && (
+                <div className="space-y-3">
+                  <Textarea
+                    ref={textareaRef}
+                    className="min-h-[220px] text-base border-slate-200 focus-visible:ring-blue-500 resize-none leading-relaxed shadow-sm p-4"
+                    placeholder="Paste the full job description here — requirements, responsibilities, and qualifications..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    data-testid="input-job-description"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-400">{STEPS[1].hint}</p>
+                    {jobDescription && (
+                      <span className={`text-xs font-medium tabular-nums ${wordCount(jobDescription) < 40 ? "text-amber-500" : "text-emerald-600"}`}>
+                        {wordCount(jobDescription)} words
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3 — Resume / background */}
+              {step === 3 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      data-testid="input-file-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isParsing}
+                      className="h-9 text-xs gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50"
+                      data-testid="button-upload-file"
+                    >
+                      {isParsing ? <><Loader2 className="w-3 h-3 animate-spin" /> Parsing...</> : <><Upload className="w-3 h-3" /> Upload PDF / DOCX</>}
+                    </Button>
+                    <span className="text-xs text-slate-400">or paste text below</span>
+                  </div>
+                  {uploadedFileName && (
+                    <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{uploadedFileName}</span>
+                    </div>
+                  )}
+                  <Textarea
+                    ref={textareaRef}
+                    className="min-h-[200px] text-base border-slate-200 focus-visible:ring-blue-500 resize-none leading-relaxed shadow-sm p-4"
+                    placeholder="Paste your resume, LinkedIn About section, or key bullet points from your work history..."
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                    data-testid="input-resume-text"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-400">{STEPS[2].hint}</p>
+                    {resumeText && (
+                      <span className={`text-xs font-medium tabular-nums ${wordCount(resumeText) < 60 ? "text-amber-500" : "text-emerald-600"}`}>
+                        {wordCount(resumeText)} words
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="space-y-3 pt-2">
+                <Button
+                  onClick={handleStart}
+                  disabled={createInterview.isPending}
+                  className="w-full h-12 text-base font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-md gap-2"
+                  data-testid="button-start-interview"
+                >
+                  {createInterview.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Creating session...</>
+                  ) : (
+                    <><Play className="w-4 h-4 fill-current" /> Start Interview</>
+                  )}
+                </Button>
+                <button
+                  onClick={goBack}
+                  className="w-full text-center text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors flex items-center justify-center gap-1.5 py-2"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        <div
-          key={step}
-          className={`w-full max-w-xl space-y-7 ${
-            animDir === "forward"
-              ? "animate-in fade-in slide-in-from-right-4 duration-400"
-              : "animate-in fade-in slide-in-from-left-4 duration-400"
-          }`}
-        >
-          <div className="space-y-3">
-            <p className="text-xs font-bold tracking-[0.12em] text-blue-600 uppercase">
-              {STEPS[step - 1].stepLabel}
-            </p>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
-              {STEPS[step - 1].heading}
-            </h1>
-          </div>
-
-          {/* Step 1 — Job title + interview type */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <div className="space-y-3">
-                <Input
-                  ref={inputRef}
-                  className="h-14 text-lg border-slate-200 focus-visible:ring-blue-500 shadow-sm"
-                  placeholder="e.g. Senior Frontend Engineer at Stripe"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && goNext()}
-                  data-testid="input-job-title"
-                />
-                <p className="text-sm text-slate-400">{STEPS[0].hint}</p>
-              </div>
-
-              {/* Interview type selector */}
-              <div className="space-y-2.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Interview Focus</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {INTERVIEW_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => setInterviewType(type.value)}
-                      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
-                        interviewType === type.value
-                          ? "border-blue-400 bg-blue-50 shadow-sm shadow-blue-100/60"
-                          : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80"
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${type.color}`}>
-                        <type.icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-semibold ${interviewType === type.value ? "text-blue-700" : "text-slate-800"}`}>
-                            {type.label}
-                          </span>
-                          {interviewType === type.value && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-100 rounded-full px-1.5 py-0.5">
-                              Selected
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400 truncate">{type.desc}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time limit per question */}
-              <div className="space-y-2.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                  <Timer className="w-3.5 h-3.5" /> Time limit per question
-                </p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {([0, 30, 60, 90, 120] as const).map((secs) => (
-                    <button
-                      key={secs}
-                      onClick={() => setTimeLimit(secs)}
-                      className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-150 ${
-                        timeLimit === secs
-                          ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/60"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                      }`}
-                    >
-                      {secs === 0 ? "No limit" : `${secs}s`}
-                    </button>
-                  ))}
-                </div>
-                {timeLimit > 0 && (
-                  <p className="text-xs text-slate-400">Recording auto-stops and submits when time runs out.</p>
-                )}
-              </div>
-
-              {!isLoadingAuth && !isAuthenticated && (
-                <button
-                  onClick={() => setLocation("/sign-in")}
-                  className="w-full text-left flex items-center gap-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-4 py-3 hover:border-blue-300 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center shrink-0 transition-colors">
-                    <LogIn className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">Log in to save your history</p>
-                    <p className="text-xs text-blue-500">Sign in with Google — your sessions will be saved</p>
-                  </div>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Step 2 — Job description */}
-          {step === 2 && (
-            <div className="space-y-3">
-              <Textarea
-                ref={textareaRef}
-                className="min-h-[220px] text-base border-slate-200 focus-visible:ring-blue-500 resize-none leading-relaxed shadow-sm p-4"
-                placeholder="Paste the full job description here — requirements, responsibilities, and qualifications..."
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                data-testid="input-job-description"
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">{STEPS[1].hint}</p>
-                {jobDescription && (
-                  <span className={`text-xs font-medium tabular-nums ${wordCount(jobDescription) < 40 ? "text-amber-500" : "text-emerald-600"}`}>
-                    {wordCount(jobDescription)} words
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Step 3 — Resume / background */}
-          {step === 3 && (
-            <div className="space-y-3">
-              {/* File upload */}
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  data-testid="input-file-upload"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isParsing}
-                  className="h-9 text-xs gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50"
-                  data-testid="button-upload-file"
-                >
-                  {isParsing ? <><Loader2 className="w-3 h-3 animate-spin" /> Parsing...</> : <><Upload className="w-3 h-3" /> Upload PDF / DOCX</>}
-                </Button>
-                <span className="text-xs text-slate-400">or paste text below</span>
-              </div>
-
-              {uploadedFileName && (
-                <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-                  <FileText className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{uploadedFileName}</span>
-                </div>
-              )}
-
-              <Textarea
-                ref={textareaRef}
-                className="min-h-[200px] text-base border-slate-200 focus-visible:ring-blue-500 resize-none leading-relaxed shadow-sm p-4"
-                placeholder="Paste your resume, LinkedIn About section, or key bullet points from your work history..."
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                data-testid="input-resume-text"
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">{STEPS[2].hint}</p>
-                {resumeText && (
-                  <span className={`text-xs font-medium tabular-nums ${wordCount(resumeText) < 60 ? "text-amber-500" : "text-emerald-600"}`}>
-                    {wordCount(resumeText)} words
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* CTA */}
-          <div className="space-y-3 pt-2">
-            {step < 3 ? (
-              <Button
-                onClick={goNext}
-                className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/60 gap-2"
-              >
-                Continue <ArrowRight className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleStart}
-                disabled={createInterview.isPending}
-                className="w-full h-12 text-base font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-md gap-2"
-                data-testid="button-start-interview"
-              >
-                {createInterview.isPending ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating Questions...</>
-                ) : (
-                  <><Play className="w-4 h-4 fill-current" /> Start Interview</>
-                )}
-              </Button>
-            )}
-
-            {step > 1 && (
-              <button
-                onClick={goBack}
-                className="w-full text-center text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors flex items-center justify-center gap-1.5 py-2"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-            )}
-          </div>
-        </div>
       </main>
 
       {/* Step indicator footer */}

@@ -395,9 +395,6 @@ export default function InterviewRoom() {
       <div className="w-full bg-white/80 backdrop-blur border-b border-border sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-4">
           <button onClick={() => setLocation("/")} className="flex items-center gap-2 shrink-0 group">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-200">
-              <BrainCircuit className="w-3.5 h-3.5 text-white" />
-            </div>
             <div className="hidden sm:flex items-center leading-none select-none" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
               <span className="text-[22px] tracking-[0.06em] text-slate-800">AC</span>
               <span className="text-blue-500 text-[7px] mx-[3px] mt-[1px]">◆</span>
