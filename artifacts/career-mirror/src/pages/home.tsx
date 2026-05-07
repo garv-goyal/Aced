@@ -103,6 +103,15 @@ export default function Home() {
   const createInterview = useCreateInterview();
   const deleteInterview = useDeleteInterview();
 
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isSignedIn) {
+      queryClient.invalidateQueries({ queryKey: getListInterviewsQueryKey() });
+    } else {
+      queryClient.removeQueries({ queryKey: getListInterviewsQueryKey() });
+    }
+  }, [isSignedIn, isLoaded]);
+
   const [step, setStep] = useState(1);
   const [animDir, setAnimDir] = useState<"forward" | "back">("forward");
   const [jobTitle, setJobTitle] = useState("");
@@ -116,8 +125,8 @@ export default function Home() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (step === 1) inputRef.current?.focus();
-      else textareaRef.current?.focus();
+      if (step === 1) inputRef.current?.focus({ preventScroll: true });
+      else textareaRef.current?.focus({ preventScroll: true });
     }, 350);
     return () => clearTimeout(t);
   }, [step]);
