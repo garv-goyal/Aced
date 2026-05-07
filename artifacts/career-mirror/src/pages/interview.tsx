@@ -41,6 +41,75 @@ const INTERVIEW_TYPE_LABEL: Record<string, string> = {
   culture_fit: "Culture Fit",
 };
 
+type StreamedQuestion = {
+  id: number;
+  sessionId: number;
+  orderIndex: number;
+  questionText: string;
+  category: string;
+  gapArea: string;
+  isCustom: boolean;
+  answer?: null;
+};
+
+function useStreamedQuestions(interviewId: number, onDone: () => void) {
+  const [questions, setQuestions] = useState<StreamedQuestion[]>([]);
+  const [isStreaming, setIsStreaming] = useState(true);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    setQuestions([]);
+    setIsStreaming(true);
+
+    let done = false;
+    let pollId: ReturnType<typeof setInterval> | null = null;
+
+    const finish = (finalQuestions?: StreamedQuestion[]) => {
+      if (done) return;
+      done = true;
+      if (pollId) clearInterval(pollId);
+      if (finalQuestions) setQuestions(finalQuestions);
+      setIsStreaming(false);
+      onDoneRef.current();
+    };
+
+    // Fallback: poll GET /api/interviews/:id until questions appear
+    const startPolling = () => {
+      pollId = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/interviews/${interviewId}`);
+          if (!res.ok) return;
+          const data = await res.json() as { questions?: StreamedQuestion[] };
+          const qs = data.questions ?? [];
+          if (qs.length > 0) {
+            setQuestions(qs);
+            finish(qs);
+          }
+        } catch { /* network blip, retry next tick */ }
+      }, 1000);
+    };
+
+    const es = new EventSource(`/api/interviews/${interviewId}/stream-questions`);
+
+    es.onmessage = (e: MessageEvent) => {
+      try {
+        const { question } = JSON.parse(e.data as string) as { question: StreamedQuestion };
+        setQuestions(prev =>
+          prev.some(q => q.id === question.id) ? prev : [...prev, question]
+        );
+      } catch { /* ignore malformed events */ }
+    };
+
+    es.addEventListener("done", () => { es.close(); finish(); });
+    es.onerror = () => { es.close(); startPolling(); };
+
+    return () => { es.close(); if (pollId) clearInterval(pollId); done = true; };
+  }, [interviewId]);
+
+  return { streamedQuestions: questions, isStreaming };
+}
+
 function useCountdown(limitSeconds: number, running: boolean, resetKey: number, onExpire: () => void) {
   const [timeLeft, setTimeLeft] = useState(limitSeconds);
   const onExpireRef = useRef(onExpire);
@@ -73,6 +142,10 @@ export default function InterviewRoom() {
   const scoreInterview = useScoreInterview();
   const updateQuestion = useUpdateQuestion();
 
+  const { streamedQuestions, isStreaming } = useStreamedQuestions(interviewId, () => {
+    queryClient.invalidateQueries({ queryKey: getGetInterviewQueryKey(interviewId) });
+  });
+
   const { isListening, transcript, interimTranscript, startListening, stopListening, resetTranscript, hasSupport } = useSpeechRecognition();
   const { speak, stop: stopTTS, isSpeaking } = useTextToSpeech();
 
@@ -87,7 +160,9 @@ export default function InterviewRoom() {
 
   const timer = useElapsedTimer(isListening);
 
-  const questions = session?.questions || [];
+  const questions = (!isStreaming && (session?.questions?.length ?? 0) > 0)
+    ? session!.questions
+    : streamedQuestions;
   const currentQuestion = questions[currentQuestionIndex];
 
   // Find the first unanswered question on mount
@@ -210,9 +285,52 @@ export default function InterviewRoom() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading && isStreaming) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
+
+  if (isStreaming) {
+    return (
+      <div className="min-h-screen flex flex-col items-center py-16 px-6 gap-8">
+        <div className="text-center space-y-2">
+          <div className="flex items-center gap-2 justify-center text-blue-500">
+            <BrainCircuit className="w-4 h-4 animate-pulse" />
+            <span className="text-xs font-semibold uppercase tracking-widest">Analyzing your profile</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Generating your questions</h2>
+          <p className="text-sm text-slate-400 tabular-nums">{streamedQuestions.length} of 5 ready</p>
+        </div>
+
+        <div className="w-full max-w-lg space-y-3">
+          {streamedQuestions.map((q, i) => (
+            <div
+              key={q.id}
+              className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-500"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Q{i + 1}</span>
+                <span className="text-[11px] bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded-full">{q.gapArea}</span>
+              </div>
+              <p className="text-sm text-slate-700 leading-relaxed">{q.questionText}</p>
+            </div>
+          ))}
+          {Array.from({ length: 5 - streamedQuestions.length }).map((_, i) => (
+            <div key={`skel-${i}`} className="p-4 rounded-xl border border-slate-100 bg-white">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Q{streamedQuestions.length + i + 1}</span>
+                <div className="h-4 w-20 bg-slate-100 rounded-full animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-slate-100 rounded-full animate-pulse" />
+                <div className="h-3 bg-slate-100 rounded-full animate-pulse w-4/5" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (error || !session) {
     return <div className="min-h-screen flex items-center justify-center p-8 text-center text-destructive">Failed to load interview session.</div>;
   }

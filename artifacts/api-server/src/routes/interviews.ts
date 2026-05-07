@@ -54,15 +54,8 @@ const TYPE_INSTRUCTIONS: Record<InterviewType, string> = {
   culture_fit: "Focus on questions about values, work style, team collaboration, company culture alignment, and motivations. Avoid technical and STAR behavioral questions.",
 };
 
-async function generateInterviewQuestions(
-  resumeText: string,
-  jobDescription: string,
-  jobTitle: string,
-  interviewType: InterviewType = "mixed"
-): Promise<GeneratedQuestion[]> {
-  const typeInstruction = TYPE_INSTRUCTIONS[interviewType] ?? TYPE_INSTRUCTIONS.mixed;
-
-  const systemPrompt = `You are an expert technical recruiter and interviewer. Analyze the candidate's resume and the job description to identify the top 5 gap areas — skills, experience, or competencies that the candidate may lack or where there is a mismatch. Generate one targeted interview question per gap area.
+const QUESTION_SYSTEM_PROMPT = (typeInstruction: string) =>
+  `You are an expert technical recruiter and interviewer. Analyze the candidate's resume and the job description to identify the top 5 gap areas — skills, experience, or competencies that the candidate may lack or where there is a mismatch. Generate one targeted interview question per gap area.
 
 Interview focus: ${typeInstruction}
 
@@ -80,22 +73,63 @@ Rules:
 - Questions should be open-ended and designed to reveal depth
 - Do not include any text outside the JSON array`;
 
-  const response = await openai.chat.completions.create({
+// Streams questions from OpenAI one-by-one, saving each to DB as it completes.
+// Called as fire-and-forget from POST /interviews so the response returns immediately.
+async function streamGenerateAndSaveQuestions(
+  sessionId: number,
+  jobTitle: string,
+  jobDescription: string,
+  resumeText: string,
+  interviewType: InterviewType
+) {
+  const typeInstruction = TYPE_INSTRUCTIONS[interviewType] ?? TYPE_INSTRUCTIONS.mixed;
+  const stream = await openai.chat.completions.create({
     model: "gpt-4o",
     max_completion_tokens: 2048,
+    stream: true,
     messages: [
-      { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: `Job Title: ${jobTitle}\nInterview Type: ${interviewType}\n\nJob Description:\n${jobDescription}\n\nCandidate Resume:\n${resumeText}`,
-      },
+      { role: "system", content: QUESTION_SYSTEM_PROMPT(typeInstruction) },
+      { role: "user", content: `Job Title: ${jobTitle}\nInterview Type: ${interviewType}\n\nJob Description:\n${jobDescription}\n\nCandidate Resume:\n${resumeText}` },
     ],
   });
 
-  const content = response.choices[0]?.message?.content ?? "[]";
-  const jsonMatch = content.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error("Failed to parse interview questions from AI");
-  return JSON.parse(jsonMatch[0]) as GeneratedQuestion[];
+  let depth = 0, inString = false, escape = false, inside = false, objBuffer = "", orderIndex = 0;
+
+  for await (const chunk of stream) {
+    const token = chunk.choices[0]?.delta?.content ?? "";
+    for (let ci = 0; ci < token.length; ci++) {
+      const char = token[ci];
+      if (escape) { escape = false; if (inside) objBuffer += char; continue; }
+      if (char === "\\" && inString) { escape = true; if (inside) objBuffer += char; continue; }
+      if (char === '"') { inString = !inString; if (inside) objBuffer += char; continue; }
+      if (inString) { if (inside) objBuffer += char; continue; }
+      if (char === "{") {
+        depth++;
+        if (depth === 1) { inside = true; objBuffer = "{"; }
+        else if (inside) objBuffer += char;
+      } else if (char === "}") {
+        if (inside) objBuffer += char;
+        depth--;
+        if (depth === 0 && inside) {
+          inside = false;
+          try {
+            const q = JSON.parse(objBuffer) as GeneratedQuestion;
+            await db.insert(interviewQuestions).values({
+              sessionId,
+              orderIndex: orderIndex++,
+              questionText: q.questionText,
+              category: q.category as "technical" | "behavioral",
+              gapArea: q.gapArea,
+              isCustom: false,
+            });
+          } catch { /* malformed fragment */ }
+          objBuffer = "";
+        }
+      } else if (inside) {
+        objBuffer += char;
+      }
+    }
+  }
 }
 
 async function scoreInterviewAnswers(
@@ -430,45 +464,95 @@ router.post("/interviews", async (req, res) => {
       .values({ userId: userId ?? null, userName, userEmail, jobTitle, resumeText, jobDescription, interviewType, status: "active" })
       .returning();
 
-    const generatedQuestions = await generateInterviewQuestions(
-      resumeText,
-      jobDescription,
-      jobTitle,
-      interviewType as InterviewType
-    );
-
-    const insertedQuestions = await db
-      .insert(interviewQuestions)
-      .values(
-        generatedQuestions.map((q, i) => ({
-          sessionId: session.id,
-          orderIndex: i,
-          questionText: q.questionText,
-          category: q.category,
-          gapArea: q.gapArea,
-          isCustom: false,
-        }))
-      )
-      .returning();
+    // Fire-and-forget: generate + save questions in background so the response returns immediately
+    streamGenerateAndSaveQuestions(session.id, jobTitle, jobDescription, resumeText, interviewType as InterviewType)
+      .catch(err => req.log.error({ err }, "Background question generation failed"));
 
     res.status(201).json({
       id: session.id,
       jobTitle: session.jobTitle,
       status: session.status,
       createdAt: session.createdAt,
-      questions: insertedQuestions.map((q) => ({
-        id: q.id,
-        sessionId: q.sessionId,
-        orderIndex: q.orderIndex,
-        questionText: q.questionText,
-        category: q.category,
-        gapArea: q.gapArea,
-        isCustom: q.isCustom,
-      })),
+      questions: [],
     });
   } catch (err) {
     req.log.error({ err }, "Failed to create interview");
     res.status(500).json({ error: "Failed to create interview" });
+  }
+});
+
+// GET /interviews/:id/stream-questions — SSE endpoint, streams questions one by one
+router.get("/interviews/:id/stream-questions", async (req, res) => {
+  const params = GetInterviewParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const { id } = params.data;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const emit = (data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  try {
+    const session = await db.query.interviewSessions.findFirst({
+      where: eq(interviewSessions.id, id),
+    });
+    if (!session) {
+      emit({ error: "Session not found" });
+      res.end();
+      return;
+    }
+
+    // Reconnection: questions already in DB — emit them immediately and close
+    const existing = await db
+      .select()
+      .from(interviewQuestions)
+      .where(eq(interviewQuestions.sessionId, id))
+      .orderBy(interviewQuestions.orderIndex);
+
+    if (existing.length > 0) {
+      for (const q of existing) emit({ question: q });
+      res.write(`event: done\ndata: {}\n\n`);
+      res.end();
+      return;
+    }
+
+    // Poll DB for questions as the background job saves them, emitting each one as it appears
+    const emitted = new Set<number>();
+    const deadline = Date.now() + 30_000;
+
+    while (!res.writableEnded && Date.now() < deadline) {
+      const current = await db
+        .select()
+        .from(interviewQuestions)
+        .where(eq(interviewQuestions.sessionId, id))
+        .orderBy(interviewQuestions.orderIndex);
+
+      for (const q of current) {
+        if (!emitted.has(q.id)) {
+          emitted.add(q.id);
+          emit({ question: q });
+        }
+      }
+
+      if (current.length >= 5) break;
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (!res.writableEnded) {
+      res.write(`event: done\ndata: {}\n\n`);
+      res.end();
+    }
+  } catch (err) {
+    req.log.error({ err }, "Failed to stream questions");
+    if (!res.writableEnded) {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: "Failed to generate questions" })}\n\n`);
+      res.end();
+    }
   }
 });
 
